@@ -44,7 +44,7 @@ def recommend():
             processed_df['zip3'] = str(data.get('zip3', '000')).zfill(5)[:3]
 
             query_encoded = pd.get_dummies(processed_df, columns=['state', 'zip3'], prefix=['state', 'zip3'])
-            # Use the feature list passed from the kernel to ensure exact alignment with PCA
+            # Explicitly align with training feature columns using the injected list
             query_vec = query_encoded.reindex(columns=FEATURE_COLS, fill_value=0.0).astype('float32').values
             query_pca = pca.transform(query_vec)
 
@@ -55,9 +55,11 @@ def recommend():
         res = df_sample.iloc[indices[0][1:]].copy()
         res['similarity_score'] = [float(s) for s in sims[0][1:]]
 
+        cleaned_results = res.replace([np.inf, -np.inf], np.nan).fillna(0).to_dict(orient='records')
+
         return jsonify({
             "search_mode": "PCA-FAISS-Integrated",
-            "recommendations": res.to_dict(orient='records')
+            "recommendations": cleaned_results
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
