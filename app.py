@@ -1,69 +1,77 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import joblib
 import pandas as pd
 import numpy as np
 import faiss
+import pgeocode
 import os
 
 app = Flask(__name__)
 CORS(app)
+nomi = pgeocode.Nominatim('us')
 
-# Load artifacts
+# Load Production Artifacts
 scaler = joblib.load('scaler.joblib')
 pca = joblib.load('pca.joblib')
 df_sample = joblib.load('df_sample.joblib')
 faiss_index = faiss.read_index('faiss_index.bin')
-pca_data_ref = joblib.load('pca_data.joblib')
-
-NUMERIC_COLS = ['price', 'bed', 'bath', 'acre_lot', 'house_size']
-FEATURE_COLS = ['brokered_by', 'price', 'bed', 'bath', 'acre_lot', 'street', 'zip_code', 'house_size', 'state_Alabama', 'state_Alaska', 'state_Arizona', 'state_Arkansas', 'state_California', 'state_Colorado', 'state_Connecticut', 'state_Delaware', 'state_District of Columbia', 'state_Florida', 'state_Georgia', 'state_Guam', 'state_Hawaii', 'state_Idaho', 'state_Illinois', 'state_Indiana', 'state_Iowa', 'state_Kansas', 'state_Kentucky', 'state_Louisiana', 'state_Maine', 'state_Maryland', 'state_Massachusetts', 'state_Michigan', 'state_Minnesota', 'state_Mississippi', 'state_Missouri', 'state_Montana', 'state_Nebraska', 'state_Nevada', 'state_New Hampshire', 'state_New Jersey', 'state_New Mexico', 'state_New York', 'state_North Carolina', 'state_North Dakota', 'state_Ohio', 'state_Oklahoma', 'state_Oregon', 'state_Pennsylvania', 'state_Puerto Rico', 'state_Rhode Island', 'state_South Carolina', 'state_South Dakota', 'state_Tennessee', 'state_Texas', 'state_Utah', 'state_Vermont', 'state_Virgin Islands', 'state_Virginia', 'state_Washington', 'state_West Virginia', 'state_Wisconsin', 'state_Wyoming', 'zip3_006', 'zip3_007', 'zip3_008', 'zip3_009', 'zip3_010', 'zip3_011', 'zip3_012', 'zip3_013', 'zip3_014', 'zip3_015', 'zip3_016', 'zip3_017', 'zip3_018', 'zip3_019', 'zip3_020', 'zip3_021', 'zip3_022', 'zip3_023', 'zip3_024', 'zip3_025', 'zip3_026', 'zip3_027', 'zip3_028', 'zip3_029', 'zip3_030', 'zip3_031', 'zip3_032', 'zip3_033', 'zip3_034', 'zip3_035', 'zip3_036', 'zip3_037', 'zip3_038', 'zip3_039', 'zip3_040', 'zip3_041', 'zip3_042', 'zip3_043', 'zip3_044', 'zip3_045', 'zip3_046', 'zip3_047', 'zip3_048', 'zip3_049', 'zip3_050', 'zip3_051', 'zip3_052', 'zip3_053', 'zip3_054', 'zip3_056', 'zip3_057', 'zip3_058', 'zip3_059', 'zip3_060', 'zip3_061', 'zip3_062', 'zip3_063', 'zip3_064', 'zip3_065', 'zip3_066', 'zip3_067', 'zip3_068', 'zip3_069', 'zip3_070', 'zip3_071', 'zip3_072', 'zip3_073', 'zip3_074', 'zip3_075', 'zip3_076', 'zip3_077', 'zip3_078', 'zip3_079', 'zip3_080', 'zip3_081', 'zip3_082', 'zip3_083', 'zip3_084', 'zip3_085', 'zip3_086', 'zip3_087', 'zip3_088', 'zip3_089', 'zip3_100', 'zip3_101', 'zip3_102', 'zip3_103', 'zip3_104', 'zip3_105', 'zip3_106', 'zip3_107', 'zip3_108', 'zip3_109', 'zip3_110', 'zip3_111', 'zip3_112', 'zip3_113', 'zip3_114', 'zip3_115', 'zip3_116', 'zip3_117', 'zip3_118', 'zip3_119', 'zip3_120', 'zip3_121', 'zip3_122', 'zip3_123', 'zip3_124', 'zip3_125', 'zip3_126', 'zip3_127', 'zip3_128', 'zip3_129', 'zip3_130', 'zip3_131', 'zip3_132', 'zip3_133', 'zip3_134', 'zip3_135', 'zip3_136', 'zip3_137', 'zip3_138', 'zip3_139', 'zip3_140', 'zip3_141', 'zip3_142', 'zip3_143', 'zip3_144', 'zip3_145', 'zip3_146', 'zip3_147', 'zip3_148', 'zip3_149', 'zip3_150', 'zip3_151', 'zip3_152', 'zip3_153', 'zip3_154', 'zip3_155', 'zip3_156', 'zip3_157', 'zip3_158', 'zip3_159', 'zip3_160', 'zip3_161', 'zip3_162', 'zip3_163', 'zip3_164', 'zip3_165', 'zip3_166', 'zip3_167', 'zip3_168', 'zip3_169', 'zip3_170', 'zip3_171', 'zip3_172', 'zip3_173', 'zip3_174', 'zip3_175', 'zip3_176', 'zip3_177', 'zip3_178', 'zip3_179', 'zip3_180', 'zip3_181', 'zip3_182', 'zip3_183', 'zip3_184', 'zip3_185', 'zip3_186', 'zip3_187', 'zip3_188', 'zip3_189', 'zip3_190', 'zip3_191', 'zip3_193', 'zip3_194', 'zip3_195', 'zip3_196', 'zip3_197', 'zip3_198', 'zip3_199', 'zip3_200', 'zip3_201', 'zip3_206', 'zip3_207', 'zip3_208', 'zip3_209', 'zip3_210', 'zip3_211', 'zip3_212', 'zip3_214', 'zip3_215', 'zip3_216', 'zip3_217', 'zip3_218', 'zip3_219', 'zip3_220', 'zip3_221', 'zip3_222', 'zip3_223', 'zip3_224', 'zip3_225', 'zip3_226', 'zip3_227', 'zip3_228', 'zip3_229', 'zip3_230', 'zip3_231', 'zip3_232', 'zip3_233', 'zip3_234', 'zip3_235', 'zip3_236', 'zip3_237', 'zip3_238', 'zip3_239', 'zip3_240', 'zip3_241', 'zip3_242', 'zip3_243', 'zip3_244', 'zip3_245', 'zip3_246', 'zip3_247', 'zip3_248', 'zip3_249', 'zip3_250', 'zip3_251', 'zip3_252', 'zip3_253', 'zip3_254', 'zip3_255', 'zip3_256', 'zip3_257', 'zip3_258', 'zip3_259', 'zip3_260', 'zip3_261', 'zip3_262', 'zip3_263', 'zip3_264', 'zip3_265', 'zip3_266', 'zip3_267', 'zip3_268', 'zip3_270', 'zip3_271', 'zip3_272', 'zip3_273', 'zip3_274', 'zip3_275', 'zip3_276', 'zip3_277', 'zip3_278', 'zip3_279', 'zip3_280', 'zip3_281', 'zip3_282', 'zip3_283', 'zip3_284', 'zip3_285', 'zip3_286', 'zip3_287', 'zip3_288', 'zip3_289', 'zip3_290', 'zip3_291', 'zip3_292', 'zip3_293', 'zip3_294', 'zip3_295', 'zip3_296', 'zip3_297', 'zip3_298', 'zip3_299', 'zip3_300', 'zip3_301', 'zip3_302', 'zip3_303', 'zip3_304', 'zip3_305', 'zip3_306', 'zip3_307', 'zip3_308', 'zip3_309', 'zip3_310', 'zip3_312', 'zip3_313', 'zip3_314', 'zip3_315', 'zip3_316', 'zip3_317', 'zip3_318', 'zip3_319', 'zip3_320', 'zip3_321', 'zip3_322', 'zip3_323', 'zip3_324', 'zip3_325', 'zip3_326', 'zip3_327', 'zip3_328', 'zip3_329', 'zip3_330', 'zip3_331', 'zip3_333', 'zip3_334', 'zip3_335', 'zip3_336', 'zip3_337', 'zip3_338', 'zip3_339', 'zip3_341', 'zip3_342', 'zip3_344', 'zip3_346', 'zip3_347', 'zip3_349', 'zip3_350', 'zip3_351', 'zip3_352', 'zip3_354', 'zip3_355', 'zip3_356', 'zip3_357', 'zip3_358', 'zip3_359', 'zip3_360', 'zip3_361', 'zip3_362', 'zip3_363', 'zip3_364', 'zip3_365', 'zip3_366', 'zip3_367', 'zip3_368', 'zip3_370', 'zip3_371', 'zip3_372', 'zip3_373', 'zip3_374', 'zip3_376', 'zip3_377', 'zip3_378', 'zip3_379', 'zip3_380', 'zip3_382', 'zip3_383', 'zip3_384', 'zip3_385', 'zip3_386', 'zip3_387', 'zip3_388', 'zip3_389', 'zip3_390', 'zip3_391', 'zip3_392', 'zip3_393', 'zip3_394', 'zip3_395', 'zip3_396', 'zip3_397', 'zip3_398', 'zip3_400', 'zip3_401', 'zip3_402', 'zip3_403', 'zip3_404', 'zip3_405', 'zip3_406', 'zip3_407', 'zip3_408', 'zip3_409', 'zip3_410', 'zip3_411', 'zip3_412', 'zip3_413', 'zip3_414', 'zip3_415', 'zip3_416', 'zip3_417', 'zip3_418', 'zip3_420', 'zip3_421', 'zip3_422', 'zip3_423', 'zip3_424', 'zip3_425', 'zip3_426', 'zip3_427', 'zip3_430', 'zip3_431', 'zip3_432', 'zip3_433', 'zip3_434', 'zip3_435', 'zip3_436', 'zip3_437', 'zip3_438', 'zip3_439', 'zip3_440', 'zip3_441', 'zip3_442', 'zip3_443', 'zip3_444', 'zip3_445', 'zip3_446', 'zip3_447', 'zip3_448', 'zip3_449', 'zip3_450', 'zip3_451', 'zip3_452', 'zip3_453', 'zip3_454', 'zip3_455', 'zip3_456', 'zip3_457', 'zip3_458', 'zip3_460', 'zip3_461', 'zip3_462', 'zip3_463', 'zip3_464', 'zip3_465', 'zip3_466', 'zip3_467', 'zip3_468', 'zip3_469', 'zip3_470', 'zip3_471', 'zip3_472', 'zip3_473', 'zip3_474', 'zip3_475', 'zip3_476', 'zip3_477', 'zip3_478', 'zip3_479', 'zip3_480', 'zip3_481', 'zip3_482', 'zip3_483', 'zip3_484', 'zip3_485', 'zip3_486', 'zip3_487', 'zip3_488', 'zip3_489', 'zip3_490', 'zip3_491', 'zip3_492', 'zip3_493', 'zip3_494', 'zip3_495', 'zip3_496', 'zip3_497', 'zip3_498', 'zip3_499', 'zip3_500', 'zip3_501', 'zip3_502', 'zip3_503', 'zip3_504', 'zip3_505', 'zip3_506', 'zip3_507', 'zip3_508', 'zip3_510', 'zip3_511', 'zip3_512', 'zip3_513', 'zip3_514', 'zip3_515', 'zip3_516', 'zip3_520', 'zip3_521', 'zip3_522', 'zip3_523', 'zip3_524', 'zip3_525', 'zip3_526', 'zip3_527', 'zip3_528', 'zip3_530', 'zip3_531', 'zip3_532', 'zip3_534', 'zip3_535', 'zip3_537', 'zip3_538', 'zip3_539', 'zip3_540', 'zip3_541', 'zip3_542', 'zip3_543', 'zip3_544', 'zip3_545', 'zip3_546', 'zip3_547', 'zip3_548', 'zip3_549', 'zip3_550', 'zip3_551', 'zip3_553', 'zip3_554', 'zip3_556', 'zip3_557', 'zip3_558', 'zip3_559', 'zip3_560', 'zip3_561', 'zip3_562', 'zip3_563', 'zip3_564', 'zip3_565', 'zip3_566', 'zip3_567', 'zip3_570', 'zip3_571', 'zip3_572', 'zip3_573', 'zip3_574', 'zip3_575', 'zip3_576', 'zip3_577', 'zip3_580', 'zip3_581', 'zip3_582', 'zip3_583', 'zip3_584', 'zip3_585', 'zip3_586', 'zip3_587', 'zip3_588', 'zip3_590', 'zip3_591', 'zip3_592', 'zip3_593', 'zip3_594', 'zip3_595', 'zip3_596', 'zip3_597', 'zip3_598', 'zip3_599', 'zip3_600', 'zip3_601', 'zip3_602', 'zip3_603', 'zip3_604', 'zip3_605', 'zip3_606', 'zip3_607', 'zip3_608', 'zip3_609', 'zip3_610', 'zip3_611', 'zip3_612', 'zip3_613', 'zip3_614', 'zip3_615', 'zip3_616', 'zip3_617', 'zip3_618', 'zip3_619', 'zip3_620', 'zip3_622', 'zip3_623', 'zip3_624', 'zip3_625', 'zip3_626', 'zip3_627', 'zip3_628', 'zip3_629', 'zip3_630', 'zip3_631', 'zip3_633', 'zip3_634', 'zip3_635', 'zip3_636', 'zip3_637', 'zip3_638', 'zip3_639', 'zip3_640', 'zip3_641', 'zip3_644', 'zip3_645', 'zip3_646', 'zip3_647', 'zip3_648', 'zip3_650', 'zip3_651', 'zip3_652', 'zip3_653', 'zip3_654', 'zip3_655', 'zip3_656', 'zip3_657', 'zip3_658', 'zip3_660', 'zip3_661', 'zip3_662', 'zip3_664', 'zip3_665', 'zip3_666', 'zip3_667', 'zip3_668', 'zip3_669', 'zip3_670', 'zip3_671', 'zip3_672', 'zip3_673', 'zip3_674', 'zip3_675', 'zip3_676', 'zip3_677', 'zip3_678', 'zip3_679', 'zip3_680', 'zip3_681', 'zip3_683', 'zip3_684', 'zip3_685', 'zip3_686', 'zip3_687', 'zip3_688', 'zip3_689', 'zip3_690', 'zip3_691', 'zip3_692', 'zip3_693', 'zip3_700', 'zip3_701', 'zip3_703', 'zip3_704', 'zip3_705', 'zip3_706', 'zip3_707', 'zip3_708', 'zip3_710', 'zip3_711', 'zip3_712', 'zip3_713', 'zip3_714', 'zip3_716', 'zip3_717', 'zip3_718', 'zip3_719', 'zip3_720', 'zip3_721', 'zip3_722', 'zip3_723', 'zip3_724', 'zip3_725', 'zip3_726', 'zip3_727', 'zip3_728', 'zip3_729', 'zip3_730', 'zip3_731', 'zip3_734', 'zip3_735', 'zip3_736', 'zip3_737', 'zip3_738', 'zip3_739', 'zip3_740', 'zip3_741', 'zip3_743', 'zip3_744', 'zip3_745', 'zip3_746', 'zip3_747', 'zip3_748', 'zip3_749', 'zip3_750', 'zip3_751', 'zip3_752', 'zip3_754', 'zip3_755', 'zip3_756', 'zip3_757', 'zip3_758', 'zip3_759', 'zip3_760', 'zip3_761', 'zip3_762', 'zip3_763', 'zip3_764', 'zip3_765', 'zip3_766', 'zip3_767', 'zip3_768', 'zip3_769', 'zip3_770', 'zip3_773', 'zip3_774', 'zip3_775', 'zip3_776', 'zip3_777', 'zip3_778', 'zip3_779', 'zip3_780', 'zip3_781', 'zip3_782', 'zip3_783', 'zip3_784', 'zip3_785', 'zip3_786', 'zip3_787', 'zip3_788', 'zip3_789', 'zip3_790', 'zip3_791', 'zip3_792', 'zip3_793', 'zip3_794', 'zip3_795', 'zip3_796', 'zip3_797', 'zip3_798', 'zip3_799', 'zip3_800', 'zip3_801', 'zip3_802', 'zip3_803', 'zip3_804', 'zip3_805', 'zip3_806', 'zip3_807', 'zip3_808', 'zip3_809', 'zip3_810', 'zip3_811', 'zip3_812', 'zip3_813', 'zip3_814', 'zip3_815', 'zip3_816', 'zip3_820', 'zip3_822', 'zip3_823', 'zip3_824', 'zip3_825', 'zip3_826', 'zip3_827', 'zip3_828', 'zip3_829', 'zip3_830', 'zip3_831', 'zip3_832', 'zip3_833', 'zip3_834', 'zip3_835', 'zip3_836', 'zip3_837', 'zip3_838', 'zip3_840', 'zip3_841', 'zip3_843', 'zip3_844', 'zip3_845', 'zip3_846', 'zip3_847', 'zip3_850', 'zip3_851', 'zip3_852', 'zip3_853', 'zip3_855', 'zip3_856', 'zip3_857', 'zip3_859', 'zip3_860', 'zip3_863', 'zip3_864', 'zip3_870', 'zip3_871', 'zip3_873', 'zip3_874', 'zip3_875', 'zip3_877', 'zip3_878', 'zip3_879', 'zip3_880', 'zip3_881', 'zip3_882', 'zip3_883', 'zip3_884', 'zip3_890', 'zip3_891', 'zip3_893', 'zip3_894', 'zip3_895', 'zip3_897', 'zip3_898', 'zip3_900', 'zip3_902', 'zip3_903', 'zip3_904', 'zip3_905', 'zip3_906', 'zip3_907', 'zip3_908', 'zip3_910', 'zip3_911', 'zip3_912', 'zip3_913', 'zip3_914', 'zip3_915', 'zip3_916', 'zip3_917', 'zip3_918', 'zip3_919', 'zip3_920', 'zip3_921', 'zip3_922', 'zip3_923', 'zip3_924', 'zip3_925', 'zip3_926', 'zip3_927', 'zip3_928', 'zip3_930', 'zip3_931', 'zip3_932', 'zip3_933', 'zip3_934', 'zip3_935', 'zip3_936', 'zip3_937', 'zip3_939', 'zip3_940', 'zip3_941', 'zip3_943', 'zip3_944', 'zip3_945', 'zip3_946', 'zip3_947', 'zip3_948', 'zip3_949', 'zip3_950', 'zip3_951', 'zip3_952', 'zip3_953', 'zip3_954', 'zip3_955', 'zip3_956', 'zip3_957', 'zip3_958', 'zip3_959', 'zip3_960', 'zip3_961', 'zip3_967', 'zip3_968', 'zip3_969', 'zip3_970', 'zip3_971', 'zip3_972', 'zip3_973', 'zip3_974', 'zip3_975', 'zip3_976', 'zip3_977', 'zip3_978', 'zip3_979', 'zip3_980', 'zip3_981', 'zip3_982', 'zip3_983', 'zip3_984', 'zip3_985', 'zip3_986', 'zip3_988', 'zip3_989', 'zip3_990', 'zip3_991', 'zip3_992', 'zip3_993', 'zip3_994', 'zip3_995', 'zip3_996', 'zip3_997', 'zip3_998', 'zip3_999']
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "up", "sample_size": len(df_sample)})
+    return jsonify({"status": "up"})
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
     data = request.get_json()
-    if not data: return jsonify({"error": "No input"}), 400
-
+    zip_input = str(data.get('zip_code', '90210')).zfill(5)
     n = data.get('n', 5)
+
+    # Real-time Geocoding
+    geo = nomi.query_postal_code(zip_input)
+    if geo is None or (hasattr(geo, 'latitude') and np.isnan(geo.latitude)):
+        return jsonify({"error": "Invalid Zip Code"}), 400
+
+    # Prepare Numeric Features (Order: price, bed, bath, acre_lot, house_size, lat, lon)
+    num_data = pd.DataFrame([{
+        'price': data.get('price', 0),
+        'bed': data.get('bed', 0),
+        'bath': data.get('bath', 0),
+        'acre_lot': data.get('acre_lot', 0.5),
+        'house_size': data.get('house_size', 0),
+        'lat': geo.latitude,
+        'lon': geo.longitude
+    }])
+
     try:
-        if 'property_index' in data:
-            idx = data['property_index']
-            query_pca = pca_data_ref[idx].reshape(1, -1)
-        else:
-            # Process raw features
-            feat_df = pd.DataFrame([data])
-            num_scaled = scaler.transform(feat_df[NUMERIC_COLS])
+        # 1. Scale numeric features
+        num_scaled = scaler.transform(num_data)
 
-            processed_df = pd.DataFrame(num_scaled, columns=NUMERIC_COLS)
-            processed_df['state'] = data.get('state', 'Unknown')
-            processed_df['zip3'] = str(data.get('zip3', '000')).zfill(5)[:3]
+        # 2. Build full feature vector for PCA
+        # Use n_features_in_ to ensure compatibility across sklearn versions
+        num_features = pca.n_features_in_
+        query_vec = np.zeros((1, num_features))
 
-            query_encoded = pd.get_dummies(processed_df, columns=['state', 'zip3'], prefix=['state', 'zip3'])
-            # Explicitly align with training feature columns using the injected list
-            query_vec = query_encoded.reindex(columns=FEATURE_COLS, fill_value=0.0).astype('float32').values
-            query_pca = pca.transform(query_vec)
+        # Insert scaled numeric features at the start of the vector (indices 0-6)
+        query_vec[0, :7] = num_scaled[0]
 
-        # FAISS Search
+        # 3. PCA Projection and Normalization
+        query_pca = pca.transform(query_vec.astype('float32'))
         query_norm = query_pca / (np.linalg.norm(query_pca, axis=1, keepdims=True) + 1e-10)
+
+        # 4. FAISS Search
         sims, indices = faiss_index.search(query_norm.astype('float32'), n + 1)
 
+        # 5. Result Extraction
         res = df_sample.iloc[indices[0][1:]].copy()
         res['similarity_score'] = [float(s) for s in sims[0][1:]]
 
-        cleaned_results = res.replace([np.inf, -np.inf], np.nan).fillna(0).to_dict(orient='records')
-
         return jsonify({
-            "search_mode": "PCA-FAISS-Integrated",
-            "recommendations": cleaned_results
+            "search_mode": "Granular-Geographic-PCA",
+            "recommendations": res.fillna(0).to_dict(orient='records')
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000)

@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Real Estate Recommender</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; padding-top: 50px; }
+        .search-card { border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .prop-card { margin-bottom: 15px; border-left: 5px solid #0d6efd; }
+        .score { color: #198754; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4 search-card">
+                    <h4>Property Preferences</h4>
+                    <div class="mb-2"><label>Zip Code</label><input type="text" id="zip" class="form-control" placeholder="e.g. 75001"></div>
+                    <div class="mb-2"><label>Max Price</label><input type="number" id="price" class="form-control" value="500000"></div>
+                    <div class="row mb-2">
+                        <div class="col"><label>Beds</label><input type="number" id="bed" class="form-control" value="3"></div>
+                        <div class="col"><label>Baths</label><input type="number" id="bath" class="form-control" value="2"></div>
+                    </div>
+                    <button onclick="fetchRecs()" class="btn btn-primary w-100 mt-3">Generate Matches</button>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <h3 id="status">Recommendations</h3>
+                <div id="feed"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchRecs() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = 'Searching geographic clusters...';
+            
+            const payload = {
+                zip_code: document.getElementById('zip').value,
+                price: parseFloat(document.getElementById('price').value),
+                bed: parseInt(document.getElementById('bed').value),
+                bath: parseInt(document.getElementById('bath').value),
+                house_size: 2000,
+                n: 5
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/recommend', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                let html = '';
+                data.recommendations.forEach(r => {
+                    html += `
+                    <div class="card prop-card p-3">
+                        <div class="d-flex justify-content-between">
+                            <h5>$${r.price.toLocaleString()}</h5>
+                            <span class="score">${(r.similarity_score * 100).toFixed(2)}% Match</span>
+                        </div>
+                        <p class="mb-0 text-muted">${r.city}, ${r.state} | Zip: ${r.zip_code}</p>
+                        <small>${r.bed} bed · ${r.bath} bath · ${r.house_size} sqft</small>
+                    </div>`;
+                });
+                feed.innerHTML = html || 'No matches found in this area.';
+            } catch (e) { feed.innerHTML = 'Error connecting to API. Verify server is running.'; }
+        }
+    </script>
+</body>
+</html>
