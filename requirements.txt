@@ -5,3 +5,4 @@ pandas
 numpy
 scikit-learn==1.6.1
 gunicorn
+faiss-cpu>=1.7.4
