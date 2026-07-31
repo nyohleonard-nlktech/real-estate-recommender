@@ -2,43 +2,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Real Estate Recommender</title>
+    <title>AI Real Estate Advisor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; padding-top: 50px; }
-        .search-card { border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .prop-card { margin-bottom: 15px; border-left: 5px solid #0d6efd; }
-        .score { color: #198754; font-weight: bold; }
+        body { background: #f8f9fa; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .match-bar { height: 8px; border-radius: 4px; background: #eee; }
+        .match-fill { height: 100%; border-radius: 4px; background: #0d6efd; transition: width 0.5s ease; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container mt-5">
         <div class="row">
             <div class="col-md-4">
-                <div class="card p-4 search-card">
-                    <h4>Property Preferences</h4>
-                    <div class="mb-2"><label>Zip Code</label><input type="text" id="zip" class="form-control" placeholder="e.g. 75001"></div>
-                    <div class="mb-2"><label>Max Price</label><input type="number" id="price" class="form-control" value="500000"></div>
-                    <div class="row mb-2">
+                <div class="card p-4">
+                    <h3>Refine Search</h3>
+                    <div class="mb-3"><label>Target State</label>
+                        <select id="state" class="form-select">
+                            <option value="Alabama">Alabama</option><option value="Alaska">Alaska</option><option value="Arizona">Arizona</option><option value="Arkansas">Arkansas</option><option value="California">California</option><option value="Colorado">Colorado</option><option value="Connecticut">Connecticut</option><option value="Delaware">Delaware</option><option value="District of Columbia">District of Columbia</option><option value="Florida">Florida</option><option value="Georgia">Georgia</option><option value="Hawaii">Hawaii</option><option value="Idaho">Idaho</option><option value="Illinois">Illinois</option><option value="Indiana">Indiana</option><option value="Iowa">Iowa</option><option value="Kansas">Kansas</option><option value="Kentucky">Kentucky</option><option value="Louisiana">Louisiana</option><option value="Maine">Maine</option><option value="Maryland">Maryland</option><option value="Massachusetts">Massachusetts</option><option value="Michigan">Michigan</option><option value="Minnesota">Minnesota</option><option value="Mississippi">Mississippi</option><option value="Missouri">Missouri</option><option value="Montana">Montana</option><option value="Nebraska">Nebraska</option><option value="Nevada">Nevada</option><option value="New Hampshire">New Hampshire</option><option value="New Jersey">New Jersey</option><option value="New Mexico">New Mexico</option><option value="New York">New York</option><option value="North Carolina">North Carolina</option><option value="North Dakota">North Dakota</option><option value="Ohio">Ohio</option><option value="Oklahoma">Oklahoma</option><option value="Oregon">Oregon</option><option value="Pennsylvania">Pennsylvania</option><option value="Rhode Island">Rhode Island</option><option value="South Carolina">South Carolina</option><option value="South Dakota">South Dakota</option><option value="Tennessee">Tennessee</option><option value="Texas">Texas</option><option value="Utah">Utah</option><option value="Vermont">Vermont</option><option value="Virginia">Virginia</option><option value="Washington">Washington</option><option value="West Virginia">West Virginia</option><option value="Wisconsin">Wisconsin</option><option value="Wyoming">Wyoming</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label>Zip Code</label><input type="text" id="zip" class="form-control" value="75001"></div>
+                    <div class="mb-3"><label>Budget ($)</label><input type="number" id="price" class="form-control" value="450000"></div>
+                    <div class="row">
                         <div class="col"><label>Beds</label><input type="number" id="bed" class="form-control" value="3"></div>
                         <div class="col"><label>Baths</label><input type="number" id="bath" class="form-control" value="2"></div>
                     </div>
-                    <button onclick="fetchRecs()" class="btn btn-primary w-100 mt-3">Generate Matches</button>
+                    <button onclick="search()" class="btn btn-primary w-100 mt-4">Search Optimized Similarity</button>
                 </div>
             </div>
             <div class="col-md-8">
-                <h3 id="status">Recommendations</h3>
-                <div id="feed"></div>
+                <div id="results"></div>
             </div>
         </div>
     </div>
-
     <script>
-        async function fetchRecs() {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = 'Searching geographic clusters...';
-            
+        async function search() {
+            const resDiv = document.getElementById('results');
+            resDiv.innerHTML = 'Computing high-precision similarity...';
             const payload = {
+                state: document.getElementById('state').value,
                 zip_code: document.getElementById('zip').value,
                 price: parseFloat(document.getElementById('price').value),
                 bed: parseInt(document.getElementById('bed').value),
@@ -46,29 +49,26 @@
                 house_size: 2000,
                 n: 5
             };
-
-            try {
-                const response = await fetch('http://localhost:5000/recommend', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                
-                let html = '';
-                data.recommendations.forEach(r => {
-                    html += `
-                    <div class="card prop-card p-3">
-                        <div class="d-flex justify-content-between">
-                            <h5>$${r.price.toLocaleString()}</h5>
-                            <span class="score">${(r.similarity_score * 100).toFixed(2)}% Match</span>
-                        </div>
-                        <p class="mb-0 text-muted">${r.city}, ${r.state} | Zip: ${r.zip_code}</p>
-                        <small>${r.bed} bed · ${r.bath} bath · ${r.house_size} sqft</small>
-                    </div>`;
-                });
-                feed.innerHTML = html || 'No matches found in this area.';
-            } catch (e) { feed.innerHTML = 'Error connecting to API. Verify server is running.'; }
+            const resp = await fetch('http://localhost:5000/recommend', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            let html = '';
+            data.recommendations.forEach(r => {
+                const pct = (r.similarity_score * 100).toFixed(2);
+                html += `
+                <div class="card p-3 mb-3">
+                    <div class="d-flex justify-content-between">
+                        <h5>$${r.price.toLocaleString()}</h5>
+                        <span class="text-primary fw-bold">${pct}% Similarity</span>
+                    </div>
+                    <div class="match-bar my-2"><div class="match-fill" style="width: ${pct}%"></div></div>
+                    <p class="mb-0">${r.city}, ${r.state} | ${r.bed}Beds ${r.bath}Baths</p>
+                </div>`;
+            });
+            resDiv.innerHTML = html;
         }
     </script>
 </body>
